@@ -1,4 +1,5 @@
 # Temporal Codec Server (.NET)
+NOTE: This is a work in progress and is not yet ready for production use.  It was also largely AI generated, so please use with caution.
 
 This project implements a Temporal Codec server in C#/.NET as described in the [Temporal documentation](https://docs.temporal.io/codec-server) and [encryption deployment guide](https://docs.temporal.io/production-deployment/data-encryption#codec-server-setup).
 

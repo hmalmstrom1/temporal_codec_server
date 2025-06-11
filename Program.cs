@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System;
+using System.Linq;
 using TemporalCodecServer.Encryption;
 using TemporalCodecServer.KeyManagement;
 
@@ -41,8 +43,25 @@ public partial class Program
 
         // Register KeyManagement (placeholder implementation for now)
         builder.Services.AddSingleton<IKeyManagement, DummyKeyManagement>();
-        // Register AES Encryption Provider
-        builder.Services.AddSingleton<TemporalCodecServer.Encryption.IEncryptionProvider, TemporalCodecServer.Encryption.AesEncryptionProvider>();
+        
+        // Register Encryption Provider based on configuration
+        var encryptionProviderType = builder.Configuration["ENCRYPTION_PROVIDER"]?.ToUpperInvariant() ?? "AES";
+        
+        switch (encryptionProviderType)
+        {
+            case "AES":
+                builder.Services.AddSingleton<IEncryptionProvider, AesEncryptionProvider>();
+                Console.WriteLine("Using AES Encryption Provider");
+                break;
+                
+            case "KMS":
+                builder.Services.AddSingleton<IEncryptionProvider, KmsEncryptionProvider>();
+                Console.WriteLine($"Using KMS Encryption Provider with region: {builder.Configuration["AWS_REGION"] ?? "not specified"}");
+                break;
+                
+            default:
+                throw new InvalidOperationException($"Unsupported encryption provider: {encryptionProviderType}. Supported values: AES, KMS");
+        }
 
         var app = builder.Build();
 
@@ -61,7 +80,9 @@ public partial class Program
     }
 }
 
-// DummyKeyManagement for development/testing
+/// <summary>
+/// DummyKeyManagement for development/testing
+/// </summary>
 public class DummyKeyManagement : IKeyManagement
 {
     private static readonly byte[] _aesKey = new byte[]
